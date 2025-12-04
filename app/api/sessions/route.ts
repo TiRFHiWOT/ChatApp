@@ -1,0 +1,88 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { user1Id, user2Id } = body;
+
+    if (!user1Id || !user2Id) {
+      return NextResponse.json(
+        { error: "user1Id and user2Id are required" },
+        { status: 400 }
+      );
+    }
+
+    if (user1Id === user2Id) {
+      return NextResponse.json(
+        { error: "Cannot create session with yourself" },
+        { status: 400 }
+      );
+    }
+
+    // Find or create session (order users by ID to ensure uniqueness)
+    const [id1, id2] = [user1Id, user2Id].sort();
+
+    let session = await prisma.chatSession.findFirst({
+      where: {
+        OR: [
+          { user1Id: id1, user2Id: id2 },
+          { user1Id: id2, user2Id: id1 },
+        ],
+      },
+      include: {
+        user1: {
+          select: {
+            id: true,
+            name: true,
+            picture: true,
+            email: true,
+          },
+        },
+        user2: {
+          select: {
+            id: true,
+            name: true,
+            picture: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      session = await prisma.chatSession.create({
+        data: {
+          user1Id: id1,
+          user2Id: id2,
+        },
+        include: {
+          user1: {
+            select: {
+              id: true,
+              name: true,
+              picture: true,
+              email: true,
+            },
+          },
+          user2: {
+            select: {
+              id: true,
+              name: true,
+              picture: true,
+              email: true,
+            },
+          },
+        },
+      });
+    }
+
+    return NextResponse.json({ session });
+  } catch (error) {
+    console.error("Error creating/finding session:", error);
+    return NextResponse.json(
+      { error: "Failed to create/find session" },
+      { status: 500 }
+    );
+  }
+}

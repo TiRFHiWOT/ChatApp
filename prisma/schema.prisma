@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  picture   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  sentMessages     Message[]      @relation("Sender")
+  sessionsAsUser1  ChatSession[]  @relation("User1")
+  sessionsAsUser2 ChatSession[]  @relation("User2")
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime @default(now())
+
+  user1 User @relation("User1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2 User @relation("User2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  sessionId String
+  senderId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender  User        @relation("Sender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
