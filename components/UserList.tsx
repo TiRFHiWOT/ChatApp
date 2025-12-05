@@ -2,6 +2,7 @@
 
 import { useUsers } from "@/hooks/useUsers";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Search, LogOut, User as UserIcon } from "lucide-react";
@@ -11,6 +12,7 @@ import ThemeToggle from "./ThemeToggle";
 export default function UserList({ currentUserId }: { currentUserId: string }) {
   const { users, loading } = useUsers(currentUserId);
   const { onlineUsers } = useWebSocket(currentUserId);
+  const { getUnreadCount, clearUnreadCount } = useUnreadMessages(currentUserId);
   const router = useRouter();
   const { logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +28,7 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
   }, [users, searchQuery]);
 
   const handleUserClick = (userId: string) => {
+    clearUnreadCount(userId);
     router.push(`/chat/${userId}`);
   };
 
@@ -131,7 +134,7 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
               }}
             >
               ✕
-        </button>
+            </button>
           )}
         </div>
       </div>
@@ -211,6 +214,7 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
         ) : (
           filteredUsers.map((user) => {
             const isOnline = onlineUsers.has(user.id);
+            const unreadCount = getUnreadCount(user.id);
             return (
               <div
                 key={user.id}
@@ -304,6 +308,25 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
                     {isOnline ? "Online" : "Offline"}
                   </div>
                 </div>
+                {unreadCount > 0 && (
+                  <div
+                    style={{
+                      minWidth: "20px",
+                      height: "20px",
+                      borderRadius: "10px",
+                      background: "var(--color-primary)",
+                      color: "white",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "var(--font-size-caption)",
+                      fontWeight: "600",
+                      padding: "0 var(--spacing-xs)",
+                    }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </div>
+                )}
               </div>
             );
           })
