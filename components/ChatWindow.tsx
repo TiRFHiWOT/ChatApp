@@ -137,21 +137,40 @@ export default function ChatWindow({
     if ((!inputValue.trim() && !selectedFile) || !user || sending) return;
 
     const content = inputValue.trim();
-    const messageContent = selectedFile
-      ? content
-        ? `${content}\n📎 ${selectedFile.name} (${(
-            selectedFile.size / 1024
-          ).toFixed(2)} KB)`
-        : `📎 ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(
-            2
-          )} KB)`
-      : content;
-
-    setInputValue("");
-    setSelectedFile(null);
     setSending(true);
 
+    let fileUrl: string | null = null;
+    let uploadedFileName: string | null = null;
+
     try {
+      // Upload file if one is selected
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to upload file");
+        }
+
+        const uploadData = await uploadResponse.json();
+        fileUrl = uploadData.url;
+        uploadedFileName = uploadData.fileName;
+      }
+
+      // Prepare message content with file link if uploaded
+      let messageContent = content;
+      if (fileUrl && uploadedFileName) {
+        const fileLink = `[📎 ${uploadedFileName}](${fileUrl})`;
+        messageContent = content ? `${content}\n${fileLink}` : fileLink;
+      }
+
+      // Send via WebSocket
       wsSendMessage({
         type: "message",
         sessionId,
@@ -159,11 +178,19 @@ export default function ChatWindow({
         content: messageContent,
       });
 
+      // Save to database
       await sendMessage(messageContent, user.id);
+
+      setInputValue("");
+      setSelectedFile(null);
     } catch (error) {
       console.error("Error sending message:", error);
       setInputValue(content); // Restore input
-      alert("Failed to send message. Please try again.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to send message. Please try again."
+      );
     } finally {
       setSending(false);
       if (inputRef.current) {

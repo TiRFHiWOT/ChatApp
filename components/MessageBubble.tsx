@@ -63,7 +63,90 @@ export default function MessageBubble({
               whiteSpace: "pre-wrap",
             }}
           >
-            {message.content}
+            {message.content
+              .split(/(\[📎[^\]]+\]\([^)]+\))/g)
+              .map((part, index) => {
+                // Check if this part is a markdown link
+                const linkMatch = part.match(/\[📎([^\]]+)\]\(([^)]+)\)/);
+                if (linkMatch) {
+                  const [, fileName, fileUrl] = linkMatch;
+                  const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(
+                    fileUrl
+                  );
+                  const isVideo = /\.(mp4|webm|ogg)$/i.test(fileUrl);
+
+                  if (isImage) {
+                    return (
+                      <a
+                        key={index}
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "block",
+                          marginTop: "var(--spacing-sm)",
+                          marginBottom: "var(--spacing-sm)",
+                        }}
+                      >
+                        <img
+                          src={fileUrl}
+                          alt={fileName}
+                          style={{
+                            maxWidth: "300px",
+                            maxHeight: "400px",
+                            borderRadius: "var(--radius-md)",
+                            display: "block",
+                          }}
+                        />
+                      </a>
+                    );
+                  } else if (isVideo) {
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          marginTop: "var(--spacing-sm)",
+                          marginBottom: "var(--spacing-sm)",
+                        }}
+                      >
+                        <video
+                          src={fileUrl}
+                          controls
+                          style={{
+                            maxWidth: "300px",
+                            maxHeight: "400px",
+                            borderRadius: "var(--radius-md)",
+                          }}
+                        />
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <a
+                        key={index}
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={fileName}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "var(--spacing-xs)",
+                          color: isOwn
+                            ? "rgba(255, 255, 255, 0.9)"
+                            : "var(--color-primary)",
+                          textDecoration: "underline",
+                          marginLeft: "var(--spacing-xs)",
+                          marginRight: "var(--spacing-xs)",
+                        }}
+                      >
+                        📎 {fileName}
+                      </a>
+                    );
+                  }
+                }
+                return <span key={index}>{part}</span>;
+              })}
           </div>
           {showTimestamp && (
             <div
