@@ -87,7 +87,6 @@ export default function MessageBubble({
   );
 }
 
-// Helper component to render grouped messages
 export function MessageGroup({
   messages,
   isOwn,
@@ -117,11 +116,10 @@ export function MessageGroup({
   );
 }
 
-// Helper function to group messages
 export function groupMessages(
   messages: Message[],
   currentUserId: string,
-  timeThreshold: number = 300000 // 5 minutes in milliseconds
+  timeThreshold: number = 300000
 ): Message[][] {
   if (messages.length === 0) return [];
 

@@ -47,7 +47,6 @@ export async function POST(
       );
     }
 
-    // Verify session exists
     const session = await prisma.chatSession.findUnique({
       where: { id: params.id },
     });
@@ -56,7 +55,6 @@ export async function POST(
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    // Create message
     const message = await prisma.message.create({
       data: {
         sessionId: params.id,
@@ -83,5 +81,3 @@ export async function POST(
     );
   }
 }
-
-

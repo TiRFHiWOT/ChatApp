@@ -38,7 +38,6 @@ export default function ChatPage() {
         background: "var(--bg-primary)",
       }}
     >
-      {/* Main Content */}
       <div
         style={{
           display: "flex",
@@ -46,7 +45,6 @@ export default function ChatPage() {
           overflow: "hidden",
         }}
       >
-        {/* Sidebar */}
         <div
           style={{
             width: isMobile ? "100%" : "320px",
@@ -59,7 +57,6 @@ export default function ChatPage() {
           <UserList currentUserId={user.id} />
         </div>
 
-        {/* Empty Chat View - Hidden on mobile */}
         {!isMobile && (
           <div
             style={{

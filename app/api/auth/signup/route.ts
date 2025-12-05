@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Signup error:", error);
 
-    // Check for database connection errors
     if (
       error.message?.includes("Authentication failed") ||
       error.message?.includes("database credentials")

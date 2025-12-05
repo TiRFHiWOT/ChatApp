@@ -23,7 +23,6 @@ export interface AuthResponse {
 }
 
 export async function createUser(profile: UserProfile) {
-  // For OAuth users, password is optional
   const hashedPassword = profile.password
     ? await bcrypt.hash(profile.password, 10)
     : null;
@@ -45,29 +44,26 @@ export async function createOrUpdateGoogleUser(
   name: string,
   picture?: string
 ) {
-  // Check if user exists
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
 
   if (existingUser) {
-    // Update user info if needed (especially picture)
     if (picture && existingUser.picture !== picture) {
       return prisma.user.update({
         where: { id: existingUser.id },
-        data: { picture, name }, // Update name too in case it changed
+        data: { picture, name },
       });
     }
     return existingUser;
   }
 
-  // Create new user without password
   return prisma.user.create({
     data: {
       email,
       name,
       picture,
-      password: null, // OAuth users don't have passwords
+      password: null,
     },
   });
 }

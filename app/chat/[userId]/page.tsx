@@ -171,7 +171,6 @@ export default function ChatWithUserPage() {
     return null;
   }
 
-  // Determine recipient (the other user in the session)
   const recipient =
     session.user1.id === user.id ? session.user2 : session.user1;
   const recipientOnline = onlineUsers.has(recipient.id);
@@ -185,7 +184,6 @@ export default function ChatWithUserPage() {
         background: "var(--bg-primary)",
       }}
     >
-      {/* Main Content */}
       <div
         style={{
           display: "flex",
@@ -193,7 +191,6 @@ export default function ChatWithUserPage() {
           overflow: "hidden",
         }}
       >
-        {/* Sidebar - Hidden on mobile */}
         {!isMobile && (
           <div
             style={{
@@ -207,8 +204,6 @@ export default function ChatWithUserPage() {
             <UserList currentUserId={user.id} />
           </div>
         )}
-
-        {/* Chat Window */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           <ChatWindow
             sessionId={session.id}

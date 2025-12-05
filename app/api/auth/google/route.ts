@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log for debugging (only in development)
     if (process.env.NODE_ENV === "development") {
       console.log("Verifying Google token");
       console.log(
@@ -36,11 +35,9 @@ export async function POST(request: NextRequest) {
       console.log("Token length:", idToken.length);
     }
 
-    // Verify the Google ID token
     const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
     try {
-      // Get the frontend client ID to check if they match
       const frontendClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
       if (frontendClientId && frontendClientId !== GOOGLE_CLIENT_ID) {
         console.warn(
@@ -77,18 +74,15 @@ export async function POST(request: NextRequest) {
 
       if (!payload.name) {
         console.error("No name in Google token payload:", payload);
-        // Use email as fallback name if name is missing
         payload.name = payload.email.split("@")[0];
       }
 
-      // Create or update user
       const user = await createOrUpdateGoogleUser(
         payload.email,
         payload.name,
         payload.picture || undefined
       );
 
-      // Generate JWT token
       const token = generateToken(user.id);
 
       return NextResponse.json({
@@ -108,7 +102,6 @@ export async function POST(request: NextRequest) {
         stack: error?.stack,
       });
 
-      // Provide more detailed error message
       const errorMessage = error?.message || "Invalid Google token";
       return NextResponse.json(
         {

@@ -4,9 +4,7 @@ import { parse } from "url";
 
 const PORT = process.env.WS_PORT ? parseInt(process.env.WS_PORT) : 3001;
 
-// Store active connections: userId -> WebSocket
 const connections = new Map<string, WebSocket>();
-// Store online users: userId -> timestamp
 const onlineUsers = new Map<string, number>();
 
 const server = createServer();
@@ -21,17 +19,14 @@ wss.on("connection", (ws: WebSocket, req) => {
     return;
   }
 
-  // Remove any existing connection for this user (prevent duplicates)
   const existingConnection = connections.get(userId);
   if (existingConnection && existingConnection.readyState === WebSocket.OPEN) {
     existingConnection.close();
   }
 
-  // Store connection
   connections.set(userId, ws);
   onlineUsers.set(userId, Date.now());
 
-  // Broadcast user online status to all clients
   broadcastUserStatus(userId, true);
 
   ws.on("message", async (data: Buffer) => {
@@ -62,7 +57,6 @@ wss.on("connection", (ws: WebSocket, req) => {
 
   ws.on("error", (error) => {
     console.error(`WebSocket error for user ${userId}:`, error);
-    // Clean up on error
     if (connections.has(userId)) {
       connections.delete(userId);
       onlineUsers.delete(userId);
@@ -70,7 +64,6 @@ wss.on("connection", (ws: WebSocket, req) => {
     }
   });
 
-  // Send initial online users list
   sendOnlineUsers(ws);
 });
 
@@ -81,7 +74,6 @@ async function handleMessage(message: any, senderId: string) {
     return;
   }
 
-  // Forward message to recipient if online
   const recipientWs = connections.get(recipientId);
   if (recipientWs && recipientWs.readyState === WebSocket.OPEN) {
     const messageData = {
@@ -98,7 +90,6 @@ async function handleMessage(message: any, senderId: string) {
     }
   }
 
-  // Also send confirmation back to sender
   const senderWs = connections.get(senderId);
   if (senderWs && senderWs.readyState === WebSocket.OPEN) {
     senderWs.send(
@@ -119,7 +110,6 @@ function broadcastUserStatus(userId: string, isOnline: boolean) {
     isOnline,
   });
 
-  // Broadcast to all connected clients
   connections.forEach((ws) => {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(statusMessage);
@@ -137,10 +127,9 @@ function sendOnlineUsers(ws: WebSocket) {
   );
 }
 
-// Cleanup: Remove stale connections (older than 5 minutes)
 setInterval(() => {
   const now = Date.now();
-  const staleThreshold = 5 * 60 * 1000; // 5 minutes
+  const staleThreshold = 5 * 60 * 1000;
 
   onlineUsers.forEach((timestamp, userId) => {
     if (now - timestamp > staleThreshold) {
@@ -152,7 +141,7 @@ setInterval(() => {
       onlineUsers.delete(userId);
     }
   });
-}, 60000); // Check every minute
+}, 60000);
 
 server.listen(PORT, () => {
   console.log(`WebSocket server running on port ${PORT}`);

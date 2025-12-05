@@ -18,7 +18,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    // Check for saved theme preference or default to dark
     const savedTheme = localStorage.getItem("theme") as Theme;
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"
@@ -65,8 +64,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    // Fallback when ThemeProvider is not mounted yet
-    // Check document directly for theme class
     if (typeof window !== "undefined") {
       const isDark = document.documentElement.classList.contains("dark");
       return {
@@ -75,7 +72,6 @@ export function useTheme() {
         setTheme: () => {},
       };
     }
-    // Default fallback
     return {
       theme: "dark" as Theme,
       toggleTheme: () => {},

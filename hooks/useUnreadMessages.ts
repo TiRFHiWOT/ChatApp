@@ -12,12 +12,10 @@ export function useUnreadMessages(currentUserId: string | null) {
   const { onMessage } = useWebSocket(currentUserId || null);
   const currentChatUserIdRef = useRef<string | null>(null);
 
-  // Extract current chat user ID from pathname
   useEffect(() => {
     const match = pathname?.match(/\/chat\/([^/]+)/);
     currentChatUserIdRef.current = match ? match[1] : null;
 
-    // Clear unread count when opening a chat
     if (currentChatUserIdRef.current) {
       setUnreadCounts((prev) => {
         const next = new Map(prev);
@@ -27,12 +25,10 @@ export function useUnreadMessages(currentUserId: string | null) {
     }
   }, [pathname]);
 
-  // Listen for incoming messages
   useEffect(() => {
     if (!currentUserId || !onMessage) return;
 
     const cleanup = onMessage("message", (data: any) => {
-      // Only count messages that are not from the currently open chat
       if (
         data.senderId &&
         data.senderId !== currentChatUserIdRef.current &&

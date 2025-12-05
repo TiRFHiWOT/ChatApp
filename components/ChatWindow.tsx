@@ -50,12 +50,10 @@ export default function ChatWindow({
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const processedMessagesRef = useRef<Set<string>>(new Set());
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = "auto";
@@ -66,7 +64,6 @@ export default function ChatWindow({
     }
   }, [inputValue]);
 
-  // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -86,14 +83,11 @@ export default function ChatWindow({
     };
   }, [showEmojiPicker]);
 
-  // Listen for incoming WebSocket messages
   useEffect(() => {
     if (!user || !sessionId || !onMessage) return;
 
     const cleanupMessage = onMessage("message", (data: any) => {
-      // Check if this message is for the current session
       if (data.sessionId === sessionId && data.senderId === recipientId) {
-        // Create a unique key for this message to prevent duplicate processing
         const messageKey = `${data.sessionId}-${data.senderId}-${data.content}-${data.timestamp}`;
 
         if (processedMessagesRef.current.has(messageKey)) {
@@ -101,12 +95,10 @@ export default function ChatWindow({
         }
 
         processedMessagesRef.current.add(messageKey);
-        // Clean up old keys after 5 seconds to prevent memory leak
         setTimeout(() => {
           processedMessagesRef.current.delete(messageKey);
         }, 5000);
 
-        // Add message to local state
         addMessage({
           id: `temp-${Date.now()}-${Math.random()}`,
           sessionId: data.sessionId,
@@ -123,9 +115,7 @@ export default function ChatWindow({
     });
 
     const cleanupMessageSent = onMessage("message_sent", (data: any) => {
-      // Message was already added via API response, just confirm
       if (data.sessionId === sessionId) {
-        // No action needed
       }
     });
 
@@ -162,7 +152,6 @@ export default function ChatWindow({
     setSending(true);
 
     try {
-      // Send via WebSocket first for instant delivery
       wsSendMessage({
         type: "message",
         sessionId,
@@ -170,7 +159,6 @@ export default function ChatWindow({
         content: messageContent,
       });
 
-      // Also send via API to save to database
       await sendMessage(messageContent, user.id);
     } catch (error) {
       console.error("Error sending message:", error);
@@ -178,11 +166,9 @@ export default function ChatWindow({
       alert("Failed to send message. Please try again.");
     } finally {
       setSending(false);
-      // Reset textarea height
       if (inputRef.current) {
         inputRef.current.style.height = "auto";
       }
-      // Clear file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -205,8 +191,7 @@ export default function ChatWindow({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (limit to 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
         alert("File size exceeds 10MB limit. Please choose a smaller file.");
         if (fileInputRef.current) {
@@ -225,7 +210,6 @@ export default function ChatWindow({
     }
   };
 
-  // Group messages
   const messageGroups = groupMessages(messages, user?.id || "");
 
   if (loading) {
@@ -266,7 +250,6 @@ export default function ChatWindow({
         background: "var(--bg-primary)",
       }}
     >
-      {/* Connection Status Banner */}
       {!isConnected && (
         <div
           style={{
@@ -286,7 +269,6 @@ export default function ChatWindow({
         </div>
       )}
 
-      {/* Chat Header */}
       <div
         style={{
           padding: "var(--spacing-lg)",
@@ -297,7 +279,6 @@ export default function ChatWindow({
           background: "var(--bg-surface)",
         }}
       >
-        {/* Back Button */}
         <button
           onClick={() => router.push("/chat")}
           style={{
@@ -396,7 +377,6 @@ export default function ChatWindow({
         </div>
       </div>
 
-      {/* Messages Area */}
       <div
         style={{
           flex: 1,
@@ -461,7 +441,6 @@ export default function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
       <div
         style={{
           padding: "var(--spacing-lg)",
@@ -469,7 +448,6 @@ export default function ChatWindow({
           background: "var(--bg-surface)",
         }}
       >
-        {/* Selected File Display */}
         {selectedFile && (
           <div
             style={{
@@ -547,7 +525,6 @@ export default function ChatWindow({
             border: `1px solid var(--color-border)`,
           }}
         >
-          {/* Icon buttons */}
           <div style={{ position: "relative" }} ref={emojiPickerRef}>
             <button
               type="button"
@@ -645,7 +622,6 @@ export default function ChatWindow({
             <Paperclip size={20} />
           </button>
 
-          {/* Text Input */}
           <textarea
             ref={inputRef}
             value={inputValue}
@@ -670,7 +646,6 @@ export default function ChatWindow({
             }}
           />
 
-          {/* Send Button */}
           <button
             onClick={handleSend}
             disabled={(!inputValue.trim() && !selectedFile) || sending}

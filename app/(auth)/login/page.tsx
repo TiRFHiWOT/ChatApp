@@ -63,7 +63,6 @@ export default function LoginPage() {
     [loginWithGoogle]
   );
 
-  // Initialize Google Sign-In
   useEffect(() => {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -91,11 +90,9 @@ export default function LoginPage() {
       }
     };
 
-    // Check if Google script is already loaded
     if (window.google?.accounts?.id) {
       initGoogleSignIn();
     } else {
-      // Wait for script to load
       const checkGoogle = setInterval(() => {
         if (window.google?.accounts?.id) {
           clearInterval(checkGoogle);
@@ -109,15 +106,12 @@ export default function LoginPage() {
 
   const handleGoogleButtonClick = () => {
     if (submitting || !hiddenGoogleButtonRef.current) return;
-    // Find and click the hidden Google button
-    // Google renders the button as a div with role="button" or as a direct child
     const googleButton = hiddenGoogleButtonRef.current.querySelector(
       'div[role="button"], iframe'
     ) as HTMLElement;
     if (googleButton) {
       googleButton.click();
     } else {
-      // Fallback: try clicking the container itself
       const container = hiddenGoogleButtonRef.current
         .firstElementChild as HTMLElement;
       if (container) {
@@ -177,7 +171,6 @@ export default function LoginPage() {
       }}
       className="fade-in"
     >
-      {/* Theme Toggle */}
       <div
         style={{
           position: "absolute",
@@ -188,7 +181,6 @@ export default function LoginPage() {
         <ThemeToggle />
       </div>
 
-      {/* App Logo/Title */}
       <div
         style={{
           display: "flex",
@@ -237,7 +229,6 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Auth Card */}
       <div
         style={{
           width: "100%",
@@ -378,7 +369,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Google Sign-In Button */}
           {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
             <div
               style={{
@@ -418,7 +408,6 @@ export default function LoginPage() {
             <div
               style={{ position: "relative", marginTop: "var(--spacing-md)" }}
             >
-              {/* Google button rendered but hidden visually */}
               <div
                 ref={hiddenGoogleButtonRef}
                 style={{
@@ -429,7 +418,6 @@ export default function LoginPage() {
                   height: "48px",
                 }}
               />
-              {/* Custom styled button overlay */}
               <button
                 type="button"
                 onClick={handleGoogleButtonClick}

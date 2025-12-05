@@ -41,7 +41,6 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
         background: "var(--bg-surface)",
       }}
     >
-      {/* Header Section */}
       <div
         style={{
           padding: "var(--spacing-xl)",
@@ -69,7 +68,6 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
           <ThemeToggle />
         </div>
 
-        {/* Search Bar */}
         <div style={{ position: "relative" }}>
           <Search
             size={18}
@@ -139,7 +137,6 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
         </div>
       </div>
 
-      {/* Users List */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {loading ? (
           <div style={{ padding: "var(--spacing-lg)" }}>
@@ -333,7 +330,6 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
         )}
       </div>
 
-      {/* Logout Button */}
       <div
         style={{
           padding: "var(--spacing-xl)",

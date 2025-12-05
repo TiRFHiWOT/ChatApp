@@ -29,7 +29,6 @@ export function useUsers(currentUserId: string | null) {
           throw new Error("Failed to fetch users");
         }
         const data = await response.json();
-        // Filter out current user
         const otherUsers = data.users.filter(
           (user: User) => user.id !== currentUserId
         );
@@ -48,5 +47,3 @@ export function useUsers(currentUserId: string | null) {
 
   return { users, loading, error };
 }
-
-

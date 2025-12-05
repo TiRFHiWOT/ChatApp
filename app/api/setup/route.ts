@@ -93,7 +93,6 @@ CREATE INDEX IF NOT EXISTS "Message_createdAt_idx" ON "Message"("createdAt");
 
 export async function POST() {
   try {
-    // Split SQL into individual statements and execute them
     const statements = setupSQL
       .split(";")
       .map((s) => s.trim())
@@ -104,7 +103,6 @@ export async function POST() {
         try {
           await prisma.$executeRawUnsafe(statement);
         } catch (error: any) {
-          // Ignore "already exists" errors
           if (
             !error.message?.includes("already exists") &&
             !error.message?.includes("duplicate")
@@ -132,5 +130,3 @@ export async function POST() {
     );
   }
 }
-
-

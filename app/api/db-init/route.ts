@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// This endpoint will attempt to create the database schema
-// It uses Prisma's raw SQL execution which might work even if the user doesn't have full permissions
 export async function POST() {
   try {
-    // Try to create user and database using raw SQL
-    // This will only work if the connection user has superuser privileges
     const createUserSQL = `
       DO $$
       BEGIN
@@ -30,7 +26,6 @@ export async function POST() {
       }
     }
 
-    // Try to connect to chatapp database
     try {
       await prisma.$executeRawUnsafe("SELECT 1");
       return NextResponse.json({
@@ -38,7 +33,6 @@ export async function POST() {
         message: "Database connection successful!",
       });
     } catch (e: any) {
-      // If chatapp doesn't exist, try to create it
       if (
         e.message?.includes("database") &&
         e.message?.includes("does not exist")
@@ -67,5 +61,3 @@ export async function POST() {
     );
   }
 }
-
-

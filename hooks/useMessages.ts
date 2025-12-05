@@ -49,13 +49,11 @@ export function useMessages(sessionId: string | null) {
 
   const addMessage = useCallback((message: Message) => {
     setMessages((prev) => {
-      // Avoid duplicates by checking id first (most reliable)
       const existingIndex = prev.findIndex((m) => m.id === message.id);
       if (existingIndex !== -1) {
         return prev;
       }
 
-      // Also check for duplicate content within 3 seconds (for temp IDs that might be replaced)
       const isDuplicate = prev.some(
         (m) =>
           m.content === message.content &&

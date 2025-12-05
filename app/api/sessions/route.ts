@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find or create session (order users by ID to ensure uniqueness)
     const [id1, id2] = [user1Id, user2Id].sort();
 
     let session = await prisma.chatSession.findFirst({
@@ -86,5 +85,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
