@@ -44,3 +44,5 @@ node scripts/test-db-connection.js
 ```
 
 Or try signing up in the app - it should work now!
+
+

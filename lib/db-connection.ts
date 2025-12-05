@@ -10,3 +10,5 @@ export function getDatabaseUrl(): string {
 
   return `postgresql://${user}@localhost:5432/${db}?schema=public`;
 }
+
+

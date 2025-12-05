@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Search, LogOut, User as UserIcon } from "lucide-react";
 import { useState, useMemo } from "react";
+import ThemeToggle from "./ThemeToggle";
 
 export default function UserList({ currentUserId }: { currentUserId: string }) {
   const { users, loading } = useUsers(currentUserId);
   const { onlineUsers } = useWebSocket(currentUserId);
   const router = useRouter();
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredUsers = useMemo(() => {
@@ -62,77 +63,8 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
           >
             Chats
           </h2>
+          <ThemeToggle />
         </div>
-
-        {/* User Profile Section */}
-        {user && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--spacing-md)",
-              padding: "var(--spacing-md)",
-              borderRadius: "var(--radius-md)",
-              background: "var(--bg-primary)",
-              marginBottom: "var(--spacing-lg)",
-            }}
-          >
-            {user.picture ? (
-              <img
-                src={user.picture}
-                alt={user.name}
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  borderRadius: "50%",
-                  background: "var(--color-primary)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontWeight: "600",
-                  fontSize: "var(--font-size-body)",
-                }}
-              >
-                {user.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: "var(--font-size-body)",
-                  fontWeight: "600",
-                  color: "var(--color-text-dark)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {user.name}
-              </div>
-              <div
-                style={{
-                  fontSize: "var(--font-size-caption)",
-                  color: "var(--color-text-light)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {user.email}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Search Bar */}
         <div style={{ position: "relative" }}>
@@ -199,7 +131,7 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
               }}
             >
               ✕
-            </button>
+        </button>
           )}
         </div>
       </div>
@@ -343,7 +275,6 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
                         border: `2px solid var(--bg-surface)`,
                         boxShadow: "var(--shadow-sm)",
                       }}
-                      className={isOnline ? "pulse" : ""}
                     />
                   )}
                 </div>

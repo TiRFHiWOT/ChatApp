@@ -40,3 +40,5 @@ else
     echo "Then run the SQL commands from this script."
 fi
 
+
+

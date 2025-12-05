@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import UserList from "@/components/UserList";
 import ChatWindow from "@/components/ChatWindow";
-import { MessageCircle, ArrowLeft } from "lucide-react";
 
 interface Session {
   id: string;
@@ -99,71 +98,21 @@ export default function ChatWithUserPage() {
           height: "100vh",
           flexDirection: "column",
           background: "var(--bg-primary)",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <header
-          style={{
-            padding: "var(--spacing-lg)",
-            borderBottom: `1px solid var(--color-border)`,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "var(--bg-surface)",
-          }}
-        >
+        <div style={{ textAlign: "center" }}>
           <div
+            className="skeleton"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--spacing-md)",
+              width: "200px",
+              height: "20px",
+              borderRadius: "var(--radius-md)",
+              marginBottom: "var(--spacing-md)",
             }}
-          >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "var(--radius-lg)",
-                background: "var(--color-primary)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-              }}
-            >
-              <MessageCircle size={24} />
-            </div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "var(--font-size-heading)",
-                fontWeight: "600",
-                color: "var(--color-text-dark)",
-              }}
-            >
-              Chat App
-            </h1>
-          </div>
-        </header>
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <div
-              className="skeleton"
-              style={{
-                width: "200px",
-                height: "20px",
-                borderRadius: "var(--radius-md)",
-                marginBottom: "var(--spacing-md)",
-              }}
-            />
-            <p style={{ color: "var(--color-text-light)" }}>Loading chat...</p>
-          </div>
+          />
+          <p style={{ color: "var(--color-text-light)" }}>Loading chat...</p>
         </div>
       </div>
     );
@@ -177,93 +126,42 @@ export default function ChatWithUserPage() {
           height: "100vh",
           flexDirection: "column",
           background: "var(--bg-primary)",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <header
-          style={{
-            padding: "var(--spacing-lg)",
-            borderBottom: `1px solid var(--color-border)`,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "var(--bg-surface)",
-          }}
-        >
-          <div
+        <div style={{ textAlign: "center" }}>
+          <p
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--spacing-md)",
+              color: "var(--color-error)",
+              marginBottom: "var(--spacing-lg)",
+              fontSize: "var(--font-size-body)",
             }}
           >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "var(--radius-lg)",
-                background: "var(--color-primary)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-              }}
-            >
-              <MessageCircle size={24} />
-            </div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "var(--font-size-heading)",
-                fontWeight: "600",
-                color: "var(--color-text-dark)",
-              }}
-            >
-              Chat App
-            </h1>
-          </div>
-        </header>
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "center",
-            background: "var(--bg-primary)",
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <p
-              style={{
-                color: "var(--color-error)",
-                marginBottom: "var(--spacing-lg)",
-                fontSize: "var(--font-size-body)",
-              }}
-            >
-              {error}
-            </p>
-            <button
-              onClick={() => router.push("/chat")}
-              style={{
-                padding: "var(--spacing-md) var(--spacing-xl)",
-                background: "var(--color-primary)",
-                color: "white",
-                border: "none",
-                borderRadius: "var(--radius-md)",
-                cursor: "pointer",
-                fontSize: "var(--font-size-body)",
-                fontWeight: "500",
-                transition: "all var(--transition-base)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--color-primary-hover)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--color-primary)";
-              }}
-            >
-              Back to Users
-            </button>
-          </div>
+            {error}
+          </p>
+          <button
+            onClick={() => router.push("/chat")}
+            style={{
+              padding: "var(--spacing-md) var(--spacing-xl)",
+              background: "var(--color-primary)",
+              color: "white",
+              border: "none",
+              borderRadius: "var(--radius-md)",
+              cursor: "pointer",
+              fontSize: "var(--font-size-body)",
+              fontWeight: "500",
+              transition: "all var(--transition-base)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--color-primary-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "var(--color-primary)";
+            }}
+          >
+            Back to Users
+          </button>
         </div>
       </div>
     );
@@ -287,76 +185,6 @@ export default function ChatWithUserPage() {
         background: "var(--bg-primary)",
       }}
     >
-      {/* Header */}
-      <header
-        style={{
-          padding: "var(--spacing-lg)",
-          borderBottom: `1px solid var(--color-border)`,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "var(--bg-surface)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "var(--spacing-md)",
-          }}
-        >
-          {isMobile && (
-            <button
-              onClick={() => router.push("/chat")}
-              style={{
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                color: "var(--color-text-dark)",
-                padding: "var(--spacing-xs)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "var(--radius-sm)",
-                transition: "all var(--transition-base)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--bg-primary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              <ArrowLeft size={24} />
-            </button>
-          )}
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "var(--radius-lg)",
-              background: "var(--color-primary)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-            }}
-          >
-            <MessageCircle size={24} />
-          </div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "var(--font-size-heading)",
-              fontWeight: "600",
-              color: "var(--color-text-dark)",
-            }}
-          >
-            Chat App
-          </h1>
-        </div>
-      </header>
-
       {/* Main Content */}
       <div
         style={{

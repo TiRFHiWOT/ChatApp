@@ -5,7 +5,17 @@ import { useMessages, Message } from "@/hooks/useMessages";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useAuth } from "@/hooks/useAuth";
 import MessageBubble, { MessageGroup, groupMessages } from "./MessageBubble";
-import { Send, Smile, Paperclip, Wifi, WifiOff } from "lucide-react";
+import {
+  Send,
+  Smile,
+  Paperclip,
+  Wifi,
+  WifiOff,
+  X,
+  ArrowLeft,
+} from "lucide-react";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import { useRouter } from "next/navigation";
 
 interface ChatWindowProps {
   sessionId: string;
@@ -23,6 +33,7 @@ export default function ChatWindow({
   recipientOnline = false,
 }: ChatWindowProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const { messages, loading, sendMessage, addMessage } = useMessages(sessionId);
   const {
     sendMessage: wsSendMessage,
@@ -31,8 +42,12 @@ export default function ChatWindow({
   } = useWebSocket(user?.id || null);
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -49,6 +64,26 @@ export default function ChatWindow({
       )}px`;
     }
   }, [inputValue]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target as Node)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showEmojiPicker]);
 
   // Listen for incoming WebSocket messages
   useEffect(() => {
@@ -87,10 +122,21 @@ export default function ChatWindow({
   ]);
 
   const handleSend = async () => {
-    if (!inputValue.trim() || !user || sending) return;
+    if ((!inputValue.trim() && !selectedFile) || !user || sending) return;
 
     const content = inputValue.trim();
+    const messageContent = selectedFile
+      ? content
+        ? `${content}\n📎 ${selectedFile.name} (${(
+            selectedFile.size / 1024
+          ).toFixed(2)} KB)`
+        : `📎 ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(
+            2
+          )} KB)`
+      : content;
+
     setInputValue("");
+    setSelectedFile(null);
     setSending(true);
 
     try {
@@ -99,11 +145,11 @@ export default function ChatWindow({
         type: "message",
         sessionId,
         recipientId,
-        content,
+        content: messageContent,
       });
 
       // Also send via API to save to database
-      const message = await sendMessage(content, user.id);
+      const message = await sendMessage(messageContent, user.id);
 
       if (!wsSent) {
         console.warn("WebSocket not connected, message saved to DB only");
@@ -118,6 +164,10 @@ export default function ChatWindow({
       if (inputRef.current) {
         inputRef.current.style.height = "auto";
       }
+      // Clear file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -125,6 +175,35 @@ export default function ChatWindow({
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setInputValue((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+    inputRef.current?.focus();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file size (limit to 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        alert("File size exceeds 10MB limit. Please choose a smaller file.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -200,6 +279,33 @@ export default function ChatWindow({
           background: "var(--bg-surface)",
         }}
       >
+        {/* Back Button */}
+        <button
+          onClick={() => router.push("/chat")}
+          style={{
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            color: "var(--color-text-dark)",
+            padding: "var(--spacing-xs)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "var(--radius-sm)",
+            transition: "all var(--transition-base)",
+            flexShrink: 0,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--bg-primary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+          aria-label="Go back"
+        >
+          <ArrowLeft size={24} />
+        </button>
+
         {recipientPicture ? (
           <img
             src={recipientPicture}
@@ -209,6 +315,7 @@ export default function ChatWindow({
               height: "42px",
               borderRadius: "50%",
               objectFit: "cover",
+              flexShrink: 0,
             }}
           />
         ) : (
@@ -224,12 +331,13 @@ export default function ChatWindow({
               color: "white",
               fontWeight: "600",
               fontSize: "var(--font-size-body)",
+              flexShrink: 0,
             }}
           >
             {recipientName.charAt(0).toUpperCase()}
           </div>
         )}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
               fontSize: "var(--font-size-body)",
@@ -260,7 +368,6 @@ export default function ChatWindow({
                     borderRadius: "50%",
                     background: "var(--color-online)",
                   }}
-                  className="pulse"
                 />
                 <span>Online</span>
               </>
@@ -344,6 +451,73 @@ export default function ChatWindow({
           background: "var(--bg-surface)",
         }}
       >
+        {/* Selected File Display */}
+        {selectedFile && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "var(--spacing-md)",
+              padding: "var(--spacing-md)",
+              background: "var(--bg-primary)",
+              borderRadius: "var(--radius-md)",
+              marginBottom: "var(--spacing-md)",
+            }}
+            className="fade-in"
+          >
+            <Paperclip size={18} color="var(--color-primary)" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: "var(--font-size-body)",
+                  fontWeight: "500",
+                  color: "var(--color-text-dark)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {selectedFile.name}
+              </div>
+              <div
+                style={{
+                  fontSize: "var(--font-size-caption)",
+                  color: "var(--color-text-light)",
+                }}
+              >
+                {(selectedFile.size / 1024).toFixed(2)} KB
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={removeSelectedFile}
+              style={{
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--color-text-light)",
+                padding: "var(--spacing-xs)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "var(--radius-sm)",
+                transition: "all var(--transition-base)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--bg-surface)";
+                e.currentTarget.style.color = "var(--color-error)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--color-text-light)";
+              }}
+              aria-label="Remove file"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        )}
+
         <div
           style={{
             display: "flex",
@@ -356,35 +530,78 @@ export default function ChatWindow({
           }}
         >
           {/* Icon buttons */}
-          <button
-            type="button"
-            style={{
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--color-text-light)",
-              padding: "var(--spacing-xs)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "var(--radius-sm)",
-              transition: "all var(--transition-base)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--bg-surface)";
-              e.currentTarget.style.color = "var(--color-text-dark)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "var(--color-text-light)";
-            }}
-            aria-label="Add emoji"
-          >
-            <Smile size={20} />
-          </button>
+          <div style={{ position: "relative" }} ref={emojiPickerRef}>
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              style={{
+                background: showEmojiPicker
+                  ? "var(--bg-surface)"
+                  : "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: showEmojiPicker
+                  ? "var(--color-text-dark)"
+                  : "var(--color-text-light)",
+                padding: "var(--spacing-xs)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "var(--radius-sm)",
+                transition: "all var(--transition-base)",
+              }}
+              onMouseEnter={(e) => {
+                if (!showEmojiPicker) {
+                  e.currentTarget.style.background = "var(--bg-surface)";
+                  e.currentTarget.style.color = "var(--color-text-dark)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showEmojiPicker) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "var(--color-text-light)";
+                }
+              }}
+              aria-label="Add emoji"
+            >
+              <Smile size={20} />
+            </button>
 
+            {showEmojiPicker && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "100%",
+                  left: 0,
+                  marginBottom: "var(--spacing-md)",
+                  zIndex: 1000,
+                }}
+                className="fade-in"
+              >
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  theme={
+                    document.documentElement.classList.contains("dark")
+                      ? "dark"
+                      : "light"
+                  }
+                  width={350}
+                  height={400}
+                />
+              </div>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            style={{ display: "none" }}
+            onChange={handleFileSelect}
+            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+          />
           <button
             type="button"
+            onClick={() => fileInputRef.current?.click()}
             style={{
               background: "transparent",
               border: "none",
@@ -438,22 +655,25 @@ export default function ChatWindow({
           {/* Send Button */}
           <button
             onClick={handleSend}
-            disabled={!inputValue.trim() || sending}
+            disabled={(!inputValue.trim() && !selectedFile) || sending}
             type="button"
             style={{
               width: "40px",
               height: "40px",
               borderRadius: "50%",
               background:
-                inputValue.trim() && !sending
+                (inputValue.trim() || selectedFile) && !sending
                   ? "var(--color-primary)"
                   : "var(--color-border)",
               color:
-                inputValue.trim() && !sending
+                (inputValue.trim() || selectedFile) && !sending
                   ? "white"
                   : "var(--color-text-light)",
               border: "none",
-              cursor: inputValue.trim() && !sending ? "pointer" : "not-allowed",
+              cursor:
+                (inputValue.trim() || selectedFile) && !sending
+                  ? "pointer"
+                  : "not-allowed",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -461,13 +681,13 @@ export default function ChatWindow({
               flexShrink: 0,
             }}
             onMouseEnter={(e) => {
-              if (inputValue.trim() && !sending) {
+              if ((inputValue.trim() || selectedFile) && !sending) {
                 e.currentTarget.style.background = "var(--color-primary-hover)";
                 e.currentTarget.style.transform = "scale(1.05)";
               }
             }}
             onMouseLeave={(e) => {
-              if (inputValue.trim() && !sending) {
+              if ((inputValue.trim() || selectedFile) && !sending) {
                 e.currentTarget.style.background = "var(--color-primary)";
                 e.currentTarget.style.transform = "scale(1)";
               }

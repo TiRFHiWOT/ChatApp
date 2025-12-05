@@ -41,19 +41,6 @@ export default function MessageBubble({
           alignItems: isOwn ? "flex-end" : "flex-start",
         }}
       >
-        {!isOwn && !isGrouped && (
-          <div
-            style={{
-              fontSize: "var(--font-size-caption)",
-              fontWeight: "500",
-              color: "var(--color-text-light)",
-              marginBottom: "var(--spacing-xs)",
-              paddingLeft: "var(--spacing-sm)",
-            }}
-          >
-            {message.sender.name}
-          </div>
-        )}
         <div
           style={{
             maxWidth: "100%",

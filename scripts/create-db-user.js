@@ -31,3 +31,5 @@ console.log(
     process.env.DB_PASSWORD || "yourpassword"
   }@localhost:5432/chatapp?schema=public"`
 );
+
+

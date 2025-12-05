@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, MessageCircle } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
-export default function LoginPage() {
-  const { user, loading, login } = useAuth();
+export default function SignupPage() {
+  const { user, loading, signup } = useAuth();
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +28,7 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      await login(email, password);
+      await signup(email, name, password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -118,7 +119,7 @@ export default function LoginPage() {
             textAlign: "center",
           }}
         >
-          Welcome back
+          Create your account
         </h1>
         <p
           style={{
@@ -128,7 +129,7 @@ export default function LoginPage() {
             textAlign: "center",
           }}
         >
-          Sign in to continue to Chat App
+          Sign up to get started with Chat App
         </p>
       </div>
 
@@ -152,6 +153,46 @@ export default function LoginPage() {
             gap: "var(--spacing-lg)",
           }}
         >
+          <div>
+            <label
+              htmlFor="name"
+              style={{
+                display: "block",
+                marginBottom: "var(--spacing-xs)",
+                fontSize: "var(--font-size-body)",
+                fontWeight: "500",
+                color: "var(--color-text-dark)",
+              }}
+            >
+              Name
+            </label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="Enter your name"
+              style={{
+                width: "100%",
+                padding: "var(--spacing-md) var(--spacing-lg)",
+                border: `1px solid var(--color-border)`,
+                borderRadius: "var(--radius-md)",
+                fontSize: "var(--font-size-body)",
+                background: "var(--bg-primary)",
+                color: "var(--color-text-dark)",
+                outline: "none",
+                transition: "all var(--transition-base)",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "var(--color-primary)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "var(--color-border)";
+              }}
+            />
+          </div>
+
           <div>
             <label
               htmlFor="email"
@@ -213,7 +254,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                placeholder="Enter your password"
+                placeholder="Enter your password (min. 6 characters)"
                 style={{
                   width: "100%",
                   padding: "var(--spacing-md) var(--spacing-lg)",
@@ -305,7 +346,7 @@ export default function LoginPage() {
               }
             }}
           >
-            {submitting ? "Signing in..." : "Sign in"}
+            {submitting ? "Creating account..." : "Sign up"}
           </button>
         </form>
 
@@ -317,9 +358,9 @@ export default function LoginPage() {
             color: "var(--color-text-light)",
           }}
         >
-          Don't have an account?{" "}
+          Already have an account?{" "}
           <a
-            href="/signup"
+            href="/login"
             style={{
               color: "var(--color-primary)",
               fontWeight: "500",
@@ -332,7 +373,7 @@ export default function LoginPage() {
               e.currentTarget.style.textDecoration = "none";
             }}
           >
-            Sign up
+            Sign in
           </a>
         </p>
       </div>

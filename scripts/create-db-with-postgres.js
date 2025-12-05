@@ -45,3 +45,5 @@ console.log("\n✅ Updated .env file");
 console.log(
   'DATABASE_URL="postgresql://aaa:aaa@localhost:5432/chatapp?schema=public"'
 );
+
+
