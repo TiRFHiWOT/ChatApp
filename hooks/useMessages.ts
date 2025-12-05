@@ -49,22 +49,26 @@ export function useMessages(sessionId: string | null) {
 
   const addMessage = useCallback((message: Message) => {
     setMessages((prev) => {
-      // Avoid duplicates by checking both id and content+timestamp
-      const isDuplicate = prev.some(
-        (m) =>
-          m.id === message.id ||
-          (m.content === message.content &&
-            m.senderId === message.senderId &&
-            Math.abs(
-              new Date(m.createdAt).getTime() -
-                new Date(message.createdAt).getTime()
-            ) < 1000)
-      );
-      if (isDuplicate) {
-        console.log("Skipping duplicate message:", message);
+      // Avoid duplicates by checking id first (most reliable)
+      const existingIndex = prev.findIndex((m) => m.id === message.id);
+      if (existingIndex !== -1) {
         return prev;
       }
-      console.log("Adding new message:", message);
+
+      // Also check for duplicate content within 3 seconds (for temp IDs that might be replaced)
+      const isDuplicate = prev.some(
+        (m) =>
+          m.content === message.content &&
+          m.senderId === message.senderId &&
+          m.sessionId === message.sessionId &&
+          Math.abs(
+            new Date(m.createdAt).getTime() -
+              new Date(message.createdAt).getTime()
+          ) < 3000
+      );
+      if (isDuplicate) {
+        return prev;
+      }
       return [...prev, message];
     });
   }, []);

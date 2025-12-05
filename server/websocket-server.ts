@@ -21,16 +21,18 @@ wss.on("connection", (ws: WebSocket, req) => {
     return;
   }
 
+  // Remove any existing connection for this user (prevent duplicates)
+  const existingConnection = connections.get(userId);
+  if (existingConnection && existingConnection.readyState === WebSocket.OPEN) {
+    existingConnection.close();
+  }
+
   // Store connection
   connections.set(userId, ws);
   onlineUsers.set(userId, Date.now());
 
   // Broadcast user online status to all clients
   broadcastUserStatus(userId, true);
-
-  console.log(
-    `User ${userId} connected. Total connections: ${connections.size}`
-  );
 
   ws.on("message", async (data: Buffer) => {
     try {
@@ -44,9 +46,6 @@ wss.on("connection", (ws: WebSocket, req) => {
         case "message":
           await handleMessage(message, userId);
           break;
-
-        default:
-          console.log("Unknown message type:", message.type);
       }
     } catch (error) {
       console.error("Error handling message:", error);
@@ -54,16 +53,21 @@ wss.on("connection", (ws: WebSocket, req) => {
   });
 
   ws.on("close", () => {
-    connections.delete(userId);
-    onlineUsers.delete(userId);
-    broadcastUserStatus(userId, false);
-    console.log(
-      `User ${userId} disconnected. Total connections: ${connections.size}`
-    );
+    if (connections.has(userId)) {
+      connections.delete(userId);
+      onlineUsers.delete(userId);
+      broadcastUserStatus(userId, false);
+    }
   });
 
   ws.on("error", (error) => {
     console.error(`WebSocket error for user ${userId}:`, error);
+    // Clean up on error
+    if (connections.has(userId)) {
+      connections.delete(userId);
+      onlineUsers.delete(userId);
+      broadcastUserStatus(userId, false);
+    }
   });
 
   // Send initial online users list
@@ -74,13 +78,8 @@ async function handleMessage(message: any, senderId: string) {
   const { sessionId, content, recipientId } = message;
 
   if (!sessionId || !content || !recipientId) {
-    console.log("Invalid message format:", message);
     return;
   }
-
-  console.log(
-    `Forwarding message from ${senderId} to ${recipientId} in session ${sessionId}`
-  );
 
   // Forward message to recipient if online
   const recipientWs = connections.get(recipientId);
@@ -92,12 +91,11 @@ async function handleMessage(message: any, senderId: string) {
       content,
       timestamp: new Date().toISOString(),
     };
-    console.log("Sending to recipient:", messageData);
-    recipientWs.send(JSON.stringify(messageData));
-  } else {
-    console.log(
-      `Recipient ${recipientId} is not online or connection not open`
-    );
+    try {
+      recipientWs.send(JSON.stringify(messageData));
+    } catch (error) {
+      console.error("Error sending to recipient:", error);
+    }
   }
 
   // Also send confirmation back to sender

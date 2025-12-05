@@ -48,6 +48,7 @@ export default function ChatWindow({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const processedMessagesRef = useRef<Set<string>>(new Set());
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -87,13 +88,24 @@ export default function ChatWindow({
 
   // Listen for incoming WebSocket messages
   useEffect(() => {
-    if (!user || !sessionId) return;
+    if (!user || !sessionId || !onMessage) return;
 
-    const cleanup = onMessage("message", (data: any) => {
-      console.log("Received WebSocket message:", data);
+    const cleanupMessage = onMessage("message", (data: any) => {
       // Check if this message is for the current session
       if (data.sessionId === sessionId && data.senderId === recipientId) {
-        console.log("Adding message to chat:", data.content);
+        // Create a unique key for this message to prevent duplicate processing
+        const messageKey = `${data.sessionId}-${data.senderId}-${data.content}-${data.timestamp}`;
+
+        if (processedMessagesRef.current.has(messageKey)) {
+          return;
+        }
+
+        processedMessagesRef.current.add(messageKey);
+        // Clean up old keys after 5 seconds to prevent memory leak
+        setTimeout(() => {
+          processedMessagesRef.current.delete(messageKey);
+        }, 5000);
+
         // Add message to local state
         addMessage({
           id: `temp-${Date.now()}-${Math.random()}`,
@@ -110,7 +122,17 @@ export default function ChatWindow({
       }
     });
 
-    return cleanup;
+    const cleanupMessageSent = onMessage("message_sent", (data: any) => {
+      // Message was already added via API response, just confirm
+      if (data.sessionId === sessionId) {
+        // No action needed
+      }
+    });
+
+    return () => {
+      if (cleanupMessage) cleanupMessage();
+      if (cleanupMessageSent) cleanupMessageSent();
+    };
   }, [
     sessionId,
     recipientId,
@@ -141,7 +163,7 @@ export default function ChatWindow({
 
     try {
       // Send via WebSocket first for instant delivery
-      const wsSent = wsSendMessage({
+      wsSendMessage({
         type: "message",
         sessionId,
         recipientId,
@@ -149,11 +171,7 @@ export default function ChatWindow({
       });
 
       // Also send via API to save to database
-      const message = await sendMessage(messageContent, user.id);
-
-      if (!wsSent) {
-        console.warn("WebSocket not connected, message saved to DB only");
-      }
+      await sendMessage(messageContent, user.id);
     } catch (error) {
       console.error("Error sending message:", error);
       setInputValue(content); // Restore input
@@ -582,8 +600,8 @@ export default function ChatWindow({
                   onEmojiClick={handleEmojiClick}
                   theme={
                     document.documentElement.classList.contains("dark")
-                      ? "dark"
-                      : "light"
+                      ? ("dark" as any)
+                      : ("light" as any)
                   }
                   width={350}
                   height={400}

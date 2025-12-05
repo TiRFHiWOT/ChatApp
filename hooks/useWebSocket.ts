@@ -19,15 +19,24 @@ export function useWebSocket(userId: string | null) {
   const connect = useCallback(() => {
     if (!userId) return;
 
+    // Close existing connection if any
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3001";
     const ws = new WebSocket(`${wsUrl}?userId=${userId}`);
 
     ws.onopen = () => {
-      console.log("WebSocket connected for user:", userId);
       setIsConnected(true);
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
+      }
+      // Send initial ping to verify connection
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "ping" }));
       }
     };
 
@@ -60,7 +69,11 @@ export function useWebSocket(userId: string | null) {
             // Forward to registered handlers
             const messageHandler = messageHandlersRef.current.get("message");
             if (messageHandler) {
-              messageHandler(message);
+              try {
+                messageHandler(message);
+              } catch (error) {
+                console.error("Error in message handler:", error);
+              }
             }
             break;
 
@@ -71,9 +84,6 @@ export function useWebSocket(userId: string | null) {
               sentHandler(message);
             }
             break;
-
-          default:
-            console.log("Unknown message type:", message.type);
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
@@ -85,13 +95,12 @@ export function useWebSocket(userId: string | null) {
       setIsConnected(false);
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
+    ws.onclose = (event) => {
       setIsConnected(false);
       wsRef.current = null;
 
-      // Attempt to reconnect after 3 seconds
-      if (userId) {
+      // Don't reconnect if it was a normal closure or if userId changed
+      if (userId && event.code !== 1000) {
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
         }, 3000);
@@ -102,27 +111,55 @@ export function useWebSocket(userId: string | null) {
   }, [userId]);
 
   useEffect(() => {
-    if (userId) {
+    if (!userId) {
+      // Clean up if userId is removed
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      setIsConnected(false);
+      return;
+    }
+
+    // Only connect if not already connected or if connection is different
+    if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
       connect();
     }
 
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      // Don't close on cleanup if userId hasn't changed - let it stay connected
+      // Only close if component is unmounting or userId changes
     };
   }, [userId, connect]);
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      console.log("Sending WebSocket message:", message);
-      wsRef.current.send(JSON.stringify(message));
-      return true;
+    if (!wsRef.current) {
+      setIsConnected(false);
+      return false;
     }
-    console.warn("WebSocket not connected, cannot send message:", message);
+
+    const readyState = wsRef.current.readyState;
+
+    if (readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current.send(JSON.stringify(message));
+        return true;
+      } catch (error) {
+        console.error("Error sending WebSocket message:", error);
+        setIsConnected(false);
+        return false;
+      }
+    }
+
+    // Update connection state if WebSocket is closed
+    if (readyState !== WebSocket.OPEN) {
+      setIsConnected(false);
+    }
+
     return false;
   }, []);
 
@@ -138,10 +175,15 @@ export function useWebSocket(userId: string | null) {
 
   // Heartbeat to keep connection alive
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected || !wsRef.current) return;
 
     const interval = setInterval(() => {
-      sendMessage({ type: "ping" });
+      // Check connection state before sending ping
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        sendMessage({ type: "ping" });
+      } else {
+        setIsConnected(false);
+      }
     }, 30000); // Every 30 seconds
 
     return () => clearInterval(interval);
