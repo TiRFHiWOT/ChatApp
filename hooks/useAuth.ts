@@ -107,6 +107,25 @@ export function useAuth() {
     setUser(data.user);
   };
 
+  const loginWithGoogle = async (idToken: string) => {
+    const response = await fetch("/api/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Google login failed");
+    }
+
+    const data = await response.json();
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("token", data.token);
+    globalUser = data.user;
+    setUser(data.user);
+  };
+
   const logout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -116,5 +135,5 @@ export function useAuth() {
     router.replace("/login");
   };
 
-  return { user, loading, login, signup, logout };
+  return { user, loading, login, signup, loginWithGoogle, logout };
 }

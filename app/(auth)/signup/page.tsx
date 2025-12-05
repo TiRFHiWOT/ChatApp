@@ -1,13 +1,27 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, MessageCircle } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, config: any) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
+
 export default function SignupPage() {
-  const { user, loading, signup } = useAuth();
+  const { user, loading, signup, loginWithGoogle } = useAuth();
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -15,12 +29,103 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const hiddenGoogleButtonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!loading && user) {
       router.replace("/chat");
     }
   }, [user, loading, router]);
+
+  const handleGoogleSignIn = useCallback(
+    async (response: { credential: string }) => {
+      try {
+        setError("");
+        setSubmitting(true);
+
+        if (!response.credential) {
+          throw new Error("No credential received from Google");
+        }
+
+        console.log(
+          "Google sign-in credential received, length:",
+          response.credential.length
+        );
+        await loginWithGoogle(response.credential);
+      } catch (err) {
+        console.error("Google sign-in error:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Google sign-in failed";
+        setError(errorMessage);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [loginWithGoogle]
+  );
+
+  // Initialize Google Sign-In
+  useEffect(() => {
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+    if (!googleClientId || !hiddenGoogleButtonRef.current) return;
+
+    const initGoogleSignIn = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleSignIn,
+        });
+
+        if (hiddenGoogleButtonRef.current) {
+          window.google.accounts.id.renderButton(
+            hiddenGoogleButtonRef.current,
+            {
+              type: "standard",
+              theme: "outline",
+              size: "large",
+              text: "signup_with",
+              width: "100%",
+            }
+          );
+        }
+      }
+    };
+
+    // Check if Google script is already loaded
+    if (window.google?.accounts?.id) {
+      initGoogleSignIn();
+    } else {
+      // Wait for script to load
+      const checkGoogle = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          clearInterval(checkGoogle);
+          initGoogleSignIn();
+        }
+      }, 100);
+
+      return () => clearInterval(checkGoogle);
+    }
+  }, [handleGoogleSignIn]);
+
+  const handleGoogleButtonClick = () => {
+    if (submitting || !hiddenGoogleButtonRef.current) return;
+    // Find and click the hidden Google button
+    // Google renders the button as a div with role="button" or as a direct child
+    const googleButton = hiddenGoogleButtonRef.current.querySelector(
+      'div[role="button"], iframe'
+    ) as HTMLElement;
+    if (googleButton) {
+      googleButton.click();
+    } else {
+      // Fallback: try clicking the container itself
+      const container = hiddenGoogleButtonRef.current
+        .firstElementChild as HTMLElement;
+      if (container) {
+        container.click();
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +246,7 @@ export default function SignupPage() {
           padding: "var(--spacing-2xl)",
           background: "var(--bg-surface)",
           borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--shadow-lg)",
+          border: "1px solid var(--color-border)",
         }}
         className="slide-up"
       >
@@ -311,6 +416,129 @@ export default function SignupPage() {
               className="fade-in"
             >
               {error}
+            </div>
+          )}
+
+          {/* Google Sign-In Button */}
+          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--spacing-md)",
+                marginTop: "var(--spacing-md)",
+              }}
+            >
+              <div
+                style={{
+                  flex: 1,
+                  height: "1px",
+                  background: "var(--color-border)",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "var(--font-size-caption)",
+                  color: "var(--color-text-light)",
+                  padding: "0 var(--spacing-sm)",
+                }}
+              >
+                OR
+              </span>
+              <div
+                style={{
+                  flex: 1,
+                  height: "1px",
+                  background: "var(--color-border)",
+                }}
+              />
+            </div>
+          )}
+
+          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+            <div
+              style={{ position: "relative", marginTop: "var(--spacing-md)" }}
+            >
+              {/* Google button rendered but hidden visually */}
+              <div
+                ref={hiddenGoogleButtonRef}
+                style={{
+                  position: "absolute",
+                  opacity: 0,
+                  zIndex: 1,
+                  width: "100%",
+                  height: "48px",
+                }}
+              />
+              {/* Custom styled button overlay */}
+              <button
+                type="button"
+                onClick={handleGoogleButtonClick}
+                disabled={submitting}
+                style={{
+                  width: "100%",
+                  padding: "var(--spacing-md) var(--spacing-xl)",
+                  fontSize: "var(--font-size-body)",
+                  fontWeight: "500",
+                  background: submitting
+                    ? "var(--bg-primary)"
+                    : "var(--bg-surface)",
+                  color: submitting
+                    ? "var(--color-text-light)"
+                    : "var(--color-text-dark)",
+                  border: `1px solid ${
+                    submitting ? "var(--color-border)" : "var(--color-border)"
+                  }`,
+                  borderRadius: "var(--radius-md)",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  transition: "all var(--transition-base)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "var(--spacing-md)",
+                  opacity: submitting ? 0.6 : 1,
+                  position: "relative",
+                  zIndex: 2,
+                  pointerEvents: submitting ? "none" : "auto",
+                }}
+                onMouseEnter={(e) => {
+                  if (!submitting) {
+                    e.currentTarget.style.borderColor = "var(--color-border)";
+                    e.currentTarget.style.background = "var(--bg-primary)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!submitting) {
+                    e.currentTarget.style.borderColor = "var(--color-border)";
+                    e.currentTarget.style.background = "var(--bg-surface)";
+                  }
+                }}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                  style={{ flexShrink: 0 }}
+                >
+                  <path
+                    fill="#4285F4"
+                    d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"
+                  />
+                </svg>
+                <span>Sign up with Google</span>
+              </button>
             </div>
           )}
 

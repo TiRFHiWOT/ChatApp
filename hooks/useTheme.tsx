@@ -65,7 +65,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+    // Fallback when ThemeProvider is not mounted yet
+    // Check document directly for theme class
+    if (typeof window !== "undefined") {
+      const isDark = document.documentElement.classList.contains("dark");
+      return {
+        theme: isDark ? "dark" : "light",
+        toggleTheme: () => {},
+        setTheme: () => {},
+      };
+    }
+    // Default fallback
+    return {
+      theme: "dark" as Theme,
+      toggleTheme: () => {},
+      setTheme: () => {},
+    };
   }
   return context;
 }

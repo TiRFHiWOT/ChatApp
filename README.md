@@ -4,7 +4,7 @@ A real-time chat application built with Next.js, WebSockets, Prisma, and Postgre
 
 ## Features
 
-- JWT authentication (email/password)
+- JWT authentication (email/password + Google OAuth)
 - Real-time messaging via WebSocket
 - Online/offline user status
 - Persistent chat history
@@ -16,7 +16,7 @@ A real-time chat application built with Next.js, WebSockets, Prisma, and Postgre
 - **Backend**: Next.js API Routes
 - **WebSocket**: ws library (separate server)
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT (jsonwebtoken + bcryptjs)
+- **Authentication**: JWT (jsonwebtoken + bcryptjs) + Google OAuth
 
 ## Prerequisites
 
@@ -39,13 +39,34 @@ A real-time chat application built with Next.js, WebSockets, Prisma, and Postgre
    JWT_SECRET="your-secret-key-change-in-production"
    WS_PORT=3001
    NEXT_PUBLIC_WS_URL="ws://localhost:3001"
+
+   # Google OAuth (optional - for Google Sign-In)
+   GOOGLE_CLIENT_ID="your-google-client-id"
+   NEXT_PUBLIC_GOOGLE_CLIENT_ID="your-google-client-id"
    ```
+
+   **To set up Google OAuth:**
+
+   1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+   2. Create a new project or select an existing one
+   3. Enable the Google+ API
+   4. Go to "Credentials" → "Create Credentials" → "OAuth client ID"
+   5. Choose "Web application"
+   6. Add authorized JavaScript origins: `http://localhost:3000` (and your production URL)
+   7. Add authorized redirect URIs: `http://localhost:3000` (and your production URL)
+   8. Copy the Client ID and add it to your `.env` file as both `GOOGLE_CLIENT_ID` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
 
 3. **Set up the database:**
 
    ```bash
    npx prisma generate
    npx prisma db push
+   ```
+
+   If you encounter issues with the password column, you may need to run:
+
+   ```sql
+   ALTER TABLE "User" ALTER COLUMN "password" DROP NOT NULL;
    ```
 
 4. **Run the development servers:**
@@ -83,7 +104,7 @@ ChatApp/
 
 ## Usage
 
-1. Sign up with email and password (or login if you already have an account)
+1. Sign up with email and password, or use Google Sign-In (if configured)
 2. View the list of users (online/offline status shown)
 3. Click on a user to start a chat session
 4. Send and receive messages in real-time
@@ -102,4 +123,5 @@ ChatApp/
 - The WebSocket server runs on port 3001 by default
 - The Next.js app runs on port 3000 by default
 - Make sure both servers are running for full functionality
+
 # ChatApp
