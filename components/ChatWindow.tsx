@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useMessages, Message } from "@/hooks/useMessages";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useAuth } from "@/hooks/useAuth";
@@ -237,7 +237,10 @@ export default function ChatWindow({
     }
   };
 
-  const messageGroups = groupMessages(messages, user?.id || "");
+  const messageGroups = useMemo(
+    () => groupMessages(messages, user?.id || ""),
+    [messages, user?.id || ""]
+  );
 
   if (loading) {
     return (
