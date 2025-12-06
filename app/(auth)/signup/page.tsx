@@ -67,16 +67,29 @@ export default function SignupPage() {
   useEffect(() => {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-    if (!googleClientId || !hiddenGoogleButtonRef.current) return;
+    if (!googleClientId) {
+      console.warn("NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set");
+      return;
+    }
+
+    if (!hiddenGoogleButtonRef.current) return;
 
     const initGoogleSignIn = () => {
-      if (window.google?.accounts?.id) {
+      if (!window.google?.accounts?.id) {
+        console.warn("Google Sign-In script not loaded yet");
+        return false;
+      }
+
+      try {
         window.google.accounts.id.initialize({
           client_id: googleClientId,
           callback: handleGoogleSignIn,
         });
 
         if (hiddenGoogleButtonRef.current) {
+          // Clear any existing button first
+          hiddenGoogleButtonRef.current.innerHTML = "";
+
           window.google.accounts.id.renderButton(
             hiddenGoogleButtonRef.current,
             {
@@ -88,20 +101,51 @@ export default function SignupPage() {
             }
           );
         }
+        return true;
+      } catch (error) {
+        console.error("Error initializing Google Sign-In:", error);
+        return false;
       }
     };
 
+    // Try to initialize immediately if script is already loaded
     if (window.google?.accounts?.id) {
       initGoogleSignIn();
     } else {
+      // Listen for script load event
+      const handleScriptLoad = () => {
+        if (initGoogleSignIn()) {
+          window.removeEventListener("google-script-loaded", handleScriptLoad);
+        }
+      };
+
+      window.addEventListener("google-script-loaded", handleScriptLoad);
+
+      // Also poll as fallback
       const checkGoogle = setInterval(() => {
         if (window.google?.accounts?.id) {
           clearInterval(checkGoogle);
+          window.removeEventListener("google-script-loaded", handleScriptLoad);
           initGoogleSignIn();
         }
       }, 100);
 
-      return () => clearInterval(checkGoogle);
+      // Cleanup after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(checkGoogle);
+        window.removeEventListener("google-script-loaded", handleScriptLoad);
+        if (!window.google?.accounts?.id) {
+          console.error(
+            "Google Sign-In script failed to load after 10 seconds"
+          );
+        }
+      }, 10000);
+
+      return () => {
+        clearInterval(checkGoogle);
+        clearTimeout(timeout);
+        window.removeEventListener("google-script-loaded", handleScriptLoad);
+      };
     }
   }, [handleGoogleSignIn]);
 

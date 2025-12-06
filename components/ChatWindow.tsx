@@ -335,37 +335,45 @@ export default function ChatWindow({
           <ArrowLeft size={24} />
         </button>
 
-        {recipientPicture ? (
-          <img
-            src={recipientPicture}
-            alt={recipientName}
-            style={{
-              width: "42px",
-              height: "42px",
-              borderRadius: "50%",
-              objectFit: "cover",
-              flexShrink: 0,
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "42px",
-              height: "42px",
-              borderRadius: "50%",
-              background: "var(--color-primary)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontWeight: "600",
-              fontSize: "var(--font-size-body)",
-              flexShrink: 0,
-            }}
-          >
-            {recipientName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <div
+          style={{
+            width: "42px",
+            height: "42px",
+            flexShrink: 0,
+          }}
+        >
+          {recipientPicture ? (
+            <img
+              src={recipientPicture}
+              alt={recipientName}
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: "50%",
+                objectFit: "cover",
+                objectPosition: "center",
+                display: "block",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: "50%",
+                background: "var(--color-primary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontWeight: "600",
+                fontSize: "var(--font-size-body)",
+              }}
+            >
+              {recipientName.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{

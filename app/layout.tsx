@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/hooks/useTheme";
+import GoogleScript from "@/components/GoogleScript";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,8 +16,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -42,12 +40,7 @@ export default function RootLayout({
             `,
           }}
         />
-        {googleClientId && (
-          <Script
-            src="https://accounts.google.com/gsi/client"
-            strategy="lazyOnload"
-          />
-        )}
+        <GoogleScript />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

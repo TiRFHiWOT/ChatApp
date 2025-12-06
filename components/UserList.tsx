@@ -233,23 +233,32 @@ export default function UserList({ currentUserId }: { currentUserId: string }) {
                 }}
                 className="fade-in"
               >
-                <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    position: "relative",
+                    width: "42px",
+                    height: "42px",
+                    flexShrink: 0,
+                  }}
+                >
                   {user.picture ? (
                     <img
                       src={user.picture}
                       alt={user.name}
                       style={{
-                        width: "42px",
-                        height: "42px",
+                        width: "100%",
+                        height: "100%",
                         borderRadius: "50%",
                         objectFit: "cover",
+                        objectPosition: "center",
+                        display: "block",
                       }}
                     />
                   ) : (
                     <div
                       style={{
-                        width: "42px",
-                        height: "42px",
+                        width: "100%",
+                        height: "100%",
                         borderRadius: "50%",
                         background: "var(--color-primary)",
                         display: "flex",
