@@ -50,10 +50,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(newTheme);
   };
 
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // Always render the same structure to avoid hook order issues
+  // The theme will be applied via useEffect, so we can always render the provider
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
