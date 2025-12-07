@@ -67,9 +67,17 @@ export default function LoginPage() {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
     if (!googleClientId) {
-      console.warn("NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set");
+      console.warn(
+        "LoginPage: NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set. Google Sign-In will not work."
+      );
+      setError("Google Sign-In is not configured. Please contact support.");
       return;
     }
+
+    console.log(
+      "LoginPage: Google Client ID configured:",
+      googleClientId.substring(0, 20) + "..."
+    );
 
     if (!hiddenGoogleButtonRef.current) return;
 

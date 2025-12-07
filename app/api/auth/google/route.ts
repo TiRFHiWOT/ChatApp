@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     const { idToken } = body;
 
     if (!idToken) {
+      console.error("Google OAuth: No ID token provided");
       return NextResponse.json(
         { error: "ID token is required" },
         { status: 400 }
@@ -19,23 +20,25 @@ export async function POST(request: NextRequest) {
     }
 
     if (!GOOGLE_CLIENT_ID) {
+      console.error("Google OAuth: GOOGLE_CLIENT_ID not configured");
       return NextResponse.json(
         {
           error:
-            "Google OAuth not configured. Please set GOOGLE_CLIENT_ID in .env",
+            "Google OAuth not configured. Please set GOOGLE_CLIENT_ID in environment variables",
         },
         { status: 500 }
       );
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("Verifying Google token");
-      console.log(
-        "Client ID (first 20 chars):",
-        GOOGLE_CLIENT_ID.substring(0, 20) + "..."
-      );
-      console.log("Token length:", idToken.length);
-    }
+    // Log in both development and production for debugging
+    console.log("Google OAuth: Verifying token");
+    console.log("Client ID configured:", GOOGLE_CLIENT_ID ? "Yes" : "No");
+    console.log(
+      "Client ID (first 20 chars):",
+      GOOGLE_CLIENT_ID.substring(0, 20) + "..."
+    );
+    console.log("Token length:", idToken.length);
+    console.log("Environment:", process.env.NODE_ENV || "unknown");
 
     const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -102,15 +105,36 @@ export async function POST(request: NextRequest) {
         message: error?.message,
         code: error?.code,
         stack: error?.stack,
+        name: error?.name,
       });
 
-      const errorMessage = error?.message || "Invalid Google token";
+      // Check for specific error types
+      let errorMessage = "Invalid Google token";
+      let hint =
+        "Make sure GOOGLE_CLIENT_ID matches the client ID used in the frontend";
+
+      if (error?.message?.includes("Invalid token signature")) {
+        errorMessage = "Token signature verification failed";
+        hint = "The token may be expired or invalid. Try signing in again.";
+      } else if (error?.message?.includes("Wrong number of segments")) {
+        errorMessage = "Invalid token format";
+        hint = "The token format is incorrect. Please try again.";
+      } else if (error?.message?.includes("Token used too early")) {
+        errorMessage = "Token timing error";
+        hint = "Please try again in a moment.";
+      }
+
       return NextResponse.json(
         {
-          error: "Invalid Google token",
-          details:
-            process.env.NODE_ENV === "development" ? errorMessage : undefined,
-          hint: "Make sure GOOGLE_CLIENT_ID matches the client ID used in the frontend",
+          error: errorMessage,
+          details: error?.message || "Unknown error",
+          hint: hint,
+          // Include more details in production for debugging
+          debug: {
+            hasClientId: !!GOOGLE_CLIENT_ID,
+            clientIdPrefix: GOOGLE_CLIENT_ID?.substring(0, 20) + "...",
+            tokenLength: idToken?.length,
+          },
         },
         { status: 401 }
       );
