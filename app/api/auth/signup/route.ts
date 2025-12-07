@@ -5,10 +5,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    // Check for required environment variables
     if (
       !process.env.JWT_SECRET ||
-      process.env.JWT_SECRET === "your-secret-key-change-in-production"
+      process.env.JWT_SECRET === "kuBB0VryaJ5qkQ5NWX79JX4BpYPhEhrZbbmpryxejgs="
     ) {
       console.error("JWT_SECRET is not set or using default value");
       return NextResponse.json(
