@@ -5,15 +5,24 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    if (
-      !process.env.JWT_SECRET ||
-      process.env.JWT_SECRET === "kuBB0VryaJ5qkQ5NWX79JX4BpYPhEhrZbbmpryxejgs="
-    ) {
-      console.error("JWT_SECRET is not set or using default value");
+    // Validate JWT_SECRET
+    const jwtSecret = process.env.JWT_SECRET?.trim();
+    if (!jwtSecret || jwtSecret.length < 32) {
+      console.error("JWT_SECRET validation failed:", {
+        exists: !!process.env.JWT_SECRET,
+        length: process.env.JWT_SECRET?.length || 0,
+        firstChars: process.env.JWT_SECRET?.substring(0, 10) || "none",
+      });
       return NextResponse.json(
         {
           error: "Server configuration error",
           details: "JWT_SECRET environment variable is not properly configured",
+          hint:
+            process.env.NODE_ENV === "development"
+              ? `JWT_SECRET length: ${
+                  process.env.JWT_SECRET?.length || 0
+                } (minimum 32 required)`
+              : "JWT_SECRET must be at least 32 characters long",
         },
         { status: 500 }
       );

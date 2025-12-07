@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "PRISMA_QUERY_ENGINE_LIBRARY=./node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node next dev",
     "build": "prisma generate && npm run fix-prisma-binary && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "ws:dev": "tsx watch server/websocket-server.ts",
-    "fix-prisma-binary": "cp node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node node_modules/.prisma/client/libquery_engine-debian-openssl-1.1.x.so.node 2>/dev/null || true",
-    "postinstall": "npm run fix-prisma-binary"
+    "fix-prisma-binary": "ln -sf libquery_engine-debian-openssl-3.0.x.so.node node_modules/.prisma/client/libquery_engine-debian-openssl-1.1.x.so.node 2>/dev/null || true",
+    "postinstall": "npx prisma generate || true && npm run fix-prisma-binary"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

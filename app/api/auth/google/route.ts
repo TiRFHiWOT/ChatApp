@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { OAuth2Client } from "google-auth-library";
 import { createOrUpdateGoogleUser, generateToken } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 export async function POST(request: NextRequest) {

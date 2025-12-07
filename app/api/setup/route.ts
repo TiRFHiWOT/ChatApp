@@ -95,29 +95,87 @@ CREATE INDEX IF NOT EXISTS "Message_createdAt_idx" ON "Message"("createdAt");
 
 async function setupDatabase() {
   try {
+    // First, verify connection
+    await prisma.$connect();
+
+    // Check if tables already exist
+    const existingTables = await prisma.$queryRaw<
+      Array<{ table_name: string }>
+    >`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_type = 'BASE TABLE'
+    `;
+
+    const tableNames = existingTables.map((t) => t.table_name);
+    const hasUserTable = tableNames.includes("User");
+
+    if (
+      hasUserTable &&
+      tableNames.includes("ChatSession") &&
+      tableNames.includes("Message")
+    ) {
+      return {
+        success: true,
+        message: "Database tables already exist. Setup skipped.",
+        existingTables: tableNames,
+      };
+    }
+
     const statements = setupSQL
       .split(";")
       .map((s) => s.trim())
       .filter((s) => s.length > 0 && !s.startsWith("--"));
 
+    const errors: string[] = [];
     for (const statement of statements) {
       if (statement) {
         try {
           await prisma.$executeRawUnsafe(statement);
         } catch (error: any) {
+          const errorMsg = error.message || String(error);
           if (
-            !error.message?.includes("already exists") &&
-            !error.message?.includes("duplicate")
+            !errorMsg.includes("already exists") &&
+            !errorMsg.includes("duplicate") &&
+            !errorMsg.includes("does not exist")
           ) {
-            console.error("SQL error:", error.message);
+            errors.push(
+              `Statement failed: ${statement.substring(
+                0,
+                50
+              )}... Error: ${errorMsg}`
+            );
+            console.error("SQL error:", errorMsg);
           }
         }
       }
     }
 
+    // Verify tables were created
+    const finalTables = await prisma.$queryRaw<Array<{ table_name: string }>>`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_type = 'BASE TABLE'
+    `;
+
+    const finalTableNames = finalTables.map((t) => t.table_name);
+    const allTablesExist = ["User", "ChatSession", "Message"].every((table) =>
+      finalTableNames.includes(table)
+    );
+
+    if (!allTablesExist && errors.length === 0) {
+      errors.push(`Tables not created. Found: ${finalTableNames.join(", ")}`);
+    }
+
     return {
-      success: true,
-      message: "Database setup completed successfully!",
+      success: allTablesExist,
+      message: allTablesExist
+        ? "Database setup completed successfully!"
+        : "Database setup completed with errors",
+      tables: finalTableNames,
+      errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error: any) {
     console.error("Setup error:", error);
