@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { usePusher } from "@/hooks/usePusher";
 import UserList from "@/components/UserList";
 import ChatWindow from "@/components/ChatWindow";
 
@@ -28,7 +28,7 @@ export default function ChatWithUserPage() {
   const router = useRouter();
   const { user } = useAuth();
   const userId = params.userId as string;
-  const { onlineUsers } = useWebSocket(user?.id || null);
+  const { onlineUsers } = usePusher(user?.id || null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

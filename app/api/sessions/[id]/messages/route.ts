@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { pusherServer } from "@/lib/pusher";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,25 @@ export async function POST(
         },
       },
     });
+
+    // Trigger Pusher event for real-time message
+    try {
+      await pusherServer.trigger(
+        `private-message-${params.id}`,
+        "new-message",
+        {
+          id: message.id,
+          sessionId: message.sessionId,
+          senderId: message.senderId,
+          content: message.content,
+          createdAt: message.createdAt,
+          sender: message.sender,
+        }
+      );
+    } catch (pusherError) {
+      console.error("Pusher trigger error:", pusherError);
+      // Don't fail the request if Pusher fails
+    }
 
     return NextResponse.json({ message });
   } catch (error) {

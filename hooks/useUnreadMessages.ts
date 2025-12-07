@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useWebSocket } from "./useWebSocket";
+import { usePusher } from "./usePusher";
 import { usePathname } from "next/navigation";
 
 export function useUnreadMessages(currentUserId: string | null) {
@@ -9,7 +9,7 @@ export function useUnreadMessages(currentUserId: string | null) {
     new Map()
   );
   const pathname = usePathname();
-  const { onMessage } = useWebSocket(currentUserId || null);
+  const { onMessage } = usePusher(currentUserId || null);
   const currentChatUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {

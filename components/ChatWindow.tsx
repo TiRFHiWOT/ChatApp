@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMessages, Message } from "@/hooks/useMessages";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { usePusher } from "@/hooks/usePusher";
 import { useAuth } from "@/hooks/useAuth";
 import MessageBubble, { MessageGroup, groupMessages } from "./MessageBubble";
 import {
@@ -37,9 +37,10 @@ export default function ChatWindow({
   const { messages, loading, sendMessage, addMessage } = useMessages(sessionId);
   const {
     sendMessage: wsSendMessage,
+    subscribeToSession,
     onMessage,
     isConnected,
-  } = useWebSocket(user?.id || null);
+  } = usePusher(user?.id || null);
   const [inputValue, setInputValue] = useState("");
   const [sending, setSending] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -83,12 +84,23 @@ export default function ChatWindow({
     };
   }, [showEmojiPicker]);
 
+  // Subscribe to Pusher channel for this session
+  useEffect(() => {
+    if (!sessionId || !subscribeToSession) return;
+
+    const cleanup = subscribeToSession(sessionId);
+    return cleanup;
+  }, [sessionId, subscribeToSession]);
+
+  // Handle incoming messages from Pusher
   useEffect(() => {
     if (!user || !sessionId || !onMessage) return;
 
     const cleanupMessage = onMessage("message", (data: any) => {
       if (data.sessionId === sessionId && data.senderId === recipientId) {
-        const messageKey = `${data.sessionId}-${data.senderId}-${data.content}-${data.timestamp}`;
+        const messageKey = `${data.sessionId}-${data.senderId}-${
+          data.content
+        }-${data.createdAt || data.timestamp}`;
 
         if (processedMessagesRef.current.has(messageKey)) {
           return;
@@ -100,12 +112,13 @@ export default function ChatWindow({
         }, 5000);
 
         addMessage({
-          id: `temp-${Date.now()}-${Math.random()}`,
+          id: data.id || `temp-${Date.now()}-${Math.random()}`,
           sessionId: data.sessionId,
           senderId: data.senderId,
           content: data.content,
-          createdAt: data.timestamp || new Date().toISOString(),
-          sender: {
+          createdAt:
+            data.createdAt || data.timestamp || new Date().toISOString(),
+          sender: data.sender || {
             id: recipientId,
             name: recipientName,
             picture: recipientPicture,
@@ -116,6 +129,7 @@ export default function ChatWindow({
 
     const cleanupMessageSent = onMessage("message_sent", (data: any) => {
       if (data.sessionId === sessionId) {
+        // Message sent confirmation
       }
     });
 
@@ -170,15 +184,7 @@ export default function ChatWindow({
         messageContent = content ? `${content}\n${fileLink}` : fileLink;
       }
 
-      // Send via WebSocket
-      wsSendMessage({
-        type: "message",
-        sessionId,
-        recipientId,
-        content: messageContent,
-      });
-
-      // Save to database
+      // Save to database (this will trigger Pusher event via API route)
       await sendMessage(messageContent, user.id);
 
       setInputValue("");

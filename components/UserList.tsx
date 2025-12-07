@@ -1,7 +1,7 @@
 "use client";
 
 import { useUsers } from "@/hooks/useUsers";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { usePusher } from "@/hooks/usePusher";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +11,7 @@ import ThemeToggle from "./ThemeToggle";
 
 export default function UserList({ currentUserId }: { currentUserId: string }) {
   const { users, loading } = useUsers(currentUserId);
-  const { onlineUsers } = useWebSocket(currentUserId);
+  const { onlineUsers } = usePusher(currentUserId);
   const { getUnreadCount, clearUnreadCount } = useUnreadMessages(currentUserId);
   const router = useRouter();
   const { logout } = useAuth();
