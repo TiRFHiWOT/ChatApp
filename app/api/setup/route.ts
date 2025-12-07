@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const setupSQL = `
 -- Create User table if not exists
 CREATE TABLE IF NOT EXISTS "User" (
@@ -91,7 +93,7 @@ CREATE INDEX IF NOT EXISTS "Message_sessionId_idx" ON "Message"("sessionId");
 CREATE INDEX IF NOT EXISTS "Message_createdAt_idx" ON "Message"("createdAt");
 `;
 
-export async function POST() {
+async function setupDatabase() {
   try {
     const statements = setupSQL
       .split(";")
@@ -113,20 +115,31 @@ export async function POST() {
       }
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       message: "Database setup completed successfully!",
-    });
+    };
   } catch (error: any) {
     console.error("Setup error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message,
-        message:
-          "Database setup failed. Please check your DATABASE_URL and database permissions.",
-      },
-      { status: 500 }
-    );
+    return {
+      success: false,
+      error: error.message,
+      message:
+        "Database setup failed. Please check your DATABASE_URL and database permissions.",
+    };
   }
+}
+
+export async function GET() {
+  const result = await setupDatabase();
+  return NextResponse.json(result, {
+    status: result.success ? 200 : 500,
+  });
+}
+
+export async function POST() {
+  const result = await setupDatabase();
+  return NextResponse.json(result, {
+    status: result.success ? 200 : 500,
+  });
 }
