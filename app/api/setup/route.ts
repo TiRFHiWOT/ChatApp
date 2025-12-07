@@ -123,13 +123,67 @@ async function setupDatabase() {
       };
     }
 
-    const statements = setupSQL
-      .split(";")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !s.startsWith("--"));
+    // Split SQL statements properly, handling DO $$ blocks
+    const statements: string[] = [];
+    let currentStatement = "";
+    let inDoBlock = false;
+    let dollarTag = "";
+
+    const lines = setupSQL.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // Skip empty lines and comments
+      if (!trimmed || trimmed.startsWith("--")) {
+        continue;
+      }
+
+      // Check for DO $$ blocks (can be on same line or separate)
+      const doMatch = trimmed.match(/DO\s+\$\$(\w*)/i);
+      if (doMatch && !inDoBlock) {
+        inDoBlock = true;
+        dollarTag = doMatch[1] || "";
+        currentStatement += (currentStatement ? "\n" : "") + line;
+        continue;
+      }
+
+      // Check for END of DO block
+      if (inDoBlock) {
+        currentStatement += (currentStatement ? "\n" : "") + line;
+        const endMatch = trimmed.match(
+          new RegExp(`END\\s+\\$\\$${dollarTag}\\s*;?`, "i")
+        );
+        if (endMatch) {
+          inDoBlock = false;
+          dollarTag = "";
+          if (trimmed.endsWith(";")) {
+            statements.push(currentStatement.trim());
+            currentStatement = "";
+          }
+        }
+        continue;
+      }
+
+      // Regular statement
+      currentStatement += (currentStatement ? "\n" : "") + line;
+
+      if (trimmed.endsWith(";")) {
+        // Regular statement ending with semicolon
+        statements.push(currentStatement.trim());
+        currentStatement = "";
+      }
+    }
+
+    // Add any remaining statement
+    if (currentStatement.trim()) {
+      statements.push(currentStatement.trim());
+    }
+
+    // Filter out empty statements
+    const validStatements = statements.filter((s) => s.length > 0);
 
     const errors: string[] = [];
-    for (const statement of statements) {
+    for (const statement of validStatements) {
       if (statement) {
         try {
           await prisma.$executeRawUnsafe(statement);
