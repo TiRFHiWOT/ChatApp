@@ -58,6 +58,10 @@ export async function POST(
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
+    // Determine the recipient (the other user in the session)
+    const recipientId =
+      session.user1Id === senderId ? session.user2Id : session.user1Id;
+
     const message = await prisma.message.create({
       data: {
         sessionId: params.id,
@@ -84,6 +88,7 @@ export async function POST(
           id: message.id,
           sessionId: message.sessionId,
           senderId: message.senderId,
+          recipientId: recipientId, // Add recipientId so unread count can be tracked
           content: message.content,
           createdAt: message.createdAt,
           sender: message.sender,
