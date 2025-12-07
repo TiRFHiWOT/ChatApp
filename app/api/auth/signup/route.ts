@@ -1,8 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUser, generateToken } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
+    // Check for required environment variables
+    if (
+      !process.env.JWT_SECRET ||
+      process.env.JWT_SECRET === "your-secret-key-change-in-production"
+    ) {
+      console.error("JWT_SECRET is not set or using default value");
+      return NextResponse.json(
+        {
+          error: "Server configuration error",
+          details: "JWT_SECRET environment variable is not properly configured",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!process.env.DATABASE_URL) {
+      console.error("DATABASE_URL is not set");
+      return NextResponse.json(
+        {
+          error: "Server configuration error",
+          details: "DATABASE_URL environment variable is not set",
+        },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { email, name, password } = body;
 
@@ -44,6 +72,9 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error("Signup error:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
 
     if (
       error.message?.includes("Authentication failed") ||
@@ -62,11 +93,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // More detailed error for debugging
     return NextResponse.json(
       {
         error: "Internal server error",
-        details:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
+        details: error.message || "Unknown error",
+        code: error.code || "UNKNOWN",
+        // Only show full error in development or if explicitly enabled
+        ...(process.env.NODE_ENV === "development" ||
+        process.env.VERCEL_ENV === "preview"
+          ? { stack: error.stack }
+          : {}),
       },
       { status: 500 }
     );
