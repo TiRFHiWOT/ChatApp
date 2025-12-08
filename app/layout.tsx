@@ -7,8 +7,40 @@ import GoogleScript from "@/components/GoogleScript";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Chat App",
-  description: "Real-time chat application",
+  title: "Chat App - Real-time Messaging",
+  description:
+    "Connect and chat in real-time with friends and colleagues. Secure, fast, and easy-to-use messaging application.",
+  keywords: ["chat", "messaging", "real-time", "communication", "chat app"],
+  authors: [{ name: "Chat App" }],
+  openGraph: {
+    title: "Chat App - Real-time Messaging",
+    description:
+      "Connect and chat in real-time with friends and colleagues. Secure, fast, and easy-to-use messaging application.",
+    url: "https://chat-app-rho-wheat.vercel.app",
+    siteName: "Chat App",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Chat App - Real-time Messaging",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Chat App - Real-time Messaging",
+    description:
+      "Connect and chat in real-time with friends and colleagues. Secure, fast, and easy-to-use messaging application.",
+    images: ["/opengraph-image"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  metadataBase: new URL("https://chat-app-rho-wheat.vercel.app"),
 };
 
 export default function RootLayout({

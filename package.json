@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@vercel/og": "^0.8.5",
     "bcryptjs": "^2.4.3",
     "dotenv": "^17.2.3",
     "emoji-picker-react": "^4.16.1",
